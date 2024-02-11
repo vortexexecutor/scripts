@@ -1,0 +1,147 @@
+local player = game.Players.LocalPlayer
+local prefix = ";"
+
+local function kill(target)
+	local btools = player.Backpack:FindFirstChild("Building Tools") or player.Character:FindFirstChild("Building Tools")
+
+	if btools then
+
+		local args = {
+			[1] = "SyncMove",
+			[2] = {
+				[1] = {
+					["Part"] = target.Character.Head,
+					["CFrame"] = target.Character.Head.CFrame
+				}
+			}
+		}
+
+		btools.SyncAPI.ServerEndpoint:InvokeServer(unpack(args))
+	end
+end
+
+local function punish(target)
+	local btools = player.Backpack:FindFirstChild("Building Tools") or player.Character:FindFirstChild("Building Tools")
+
+	if btools then
+
+		local args = {
+			[1] = "Remove",
+			[2] = {
+				[1] = target.Character
+			}
+		}
+
+		btools.SyncAPI.ServerEndpoint:InvokeServer(unpack(args))
+	end
+end
+
+local function invisible(target)
+	local btools = player.Backpack:FindFirstChild("Building Tools") or player.Character:FindFirstChild("Building Tools")
+
+	for _, v in pairs(target.Character:GetDescendants()) do
+
+		if v:IsA("BasePart") or v:IsA("Decal") then
+
+			local args = {
+				[1] = "SyncMaterial",
+				[2] = {
+					[1] = {
+						["Part"] = v,
+						["Transparency"] = 1
+					}
+				}
+			}
+
+			btools.SyncAPI.ServerEndpoint:InvokeServer(unpack(args))
+
+		end
+
+	end
+end
+
+local function visible(target)
+	local btools = player.Backpack:FindFirstChild("Building Tools") or player.Character:FindFirstChild("Building Tools")
+
+	for _, v in pairs(target.Character:GetDescendants()) do
+
+		if (v:IsA("BasePart") or v:IsA("Decal")) and v.Name ~= "HumanoidRootPart" then
+
+			local args = {
+				[1] = "SyncMaterial",
+				[2] = {
+					[1] = {
+						["Part"] = v,
+						["Transparency"] = 0
+					}
+				}
+			}
+
+			btools.SyncAPI.ServerEndpoint:InvokeServer(unpack(args))
+
+		end
+	end
+end
+
+player.Chatted:Connect(function(msg)
+
+	msg = msg:lower()
+
+	if msg:sub(1, 1) == prefix then
+		msg = msg:sub(1 + 1, #msg)
+		print("command possible")
+		local btools = player.Backpack:FindFirstChild("Building Tools") or player.Character:FindFirstChild("Building Tools")
+		if btools then
+			local players = game.Players:GetPlayers()
+			local words = msg:split(" ")
+			local commandString = words[1]
+			local targetGroup = words[2]
+			local targets = {}
+
+			if targetGroup == "me" then
+				table.insert(targets, player)
+
+			elseif targetGroup == "all" then
+				for _, Player in pairs(players) do
+					table.insert(targets, Player)
+				end
+
+			elseif targetGroup == "others" then
+				for _, otherPlayer in pairs(players) do
+					if otherPlayer ~= player then
+						table.insert(targets, otherPlayer)
+					end
+				end
+
+			elseif targetGroup == nil then
+				table.insert(targets, player)
+			end
+
+			if commandString == "kill" then
+				for _, target in pairs(targets) do
+					kill(target)
+				end
+
+			elseif commandString == "punish" then
+				for _, target in pairs(targets) do
+					punish(target)
+				end
+
+			elseif commandString == "invisible" or commandString == "invis" then
+				for _, target in pairs(targets) do
+					invisible(target)
+				end
+
+			elseif commandString == "visible" or commandString == "vis" then
+				for _, target in pairs(targets) do
+					visible(target)
+				end
+			end
+
+		else
+			print("no btools found!")
+		end
+
+	end
+
+end)
