@@ -1,147 +1,90 @@
 local player = game.Players.LocalPlayer
 local prefix = ";"
 
-local function kill(target)
-	local btools = player.Backpack:FindFirstChild("Building Tools") or player.Character:FindFirstChild("Building Tools")
+local commands = {
+    ["kill"] = function (target)
+        local btools = player.Backpack:FindFirstChild("Building Tools") or player.Character:FindFirstChild("Building Tools")
 
-	if btools then
+        if btools then
+            local args = {
+                [1] = "SyncMove",
+                [2] = {
+                    [1] = {
+                        ["Part"] = target.Character.Head,
+                        ["CFrame"] = target.Character.Head.CFrame
+                    }
+                }
+            }
+            btools.SyncAPI.ServerEndpoint:InvokeServer(unpack(args))
+        else
+            warn("btools are required to run f3x commands")
+        end
+    end,
 
-		local args = {
-			[1] = "SyncMove",
-			[2] = {
-				[1] = {
-					["Part"] = target.Character.Head,
-					["CFrame"] = target.Character.Head.CFrame
-				}
-			}
-		}
+    ["punish"] = function (target)
+        local btools = player.Backpack:FindFirstChild("Building Tools") or player.Character:FindFirstChild("Building Tools")
 
-		btools.SyncAPI.ServerEndpoint:InvokeServer(unpack(args))
-	end
-end
+        if btools then
+            
+        else
+            warn("btools are required to run f3x commands")
+        end
+    end
+}
 
-local function punish(target)
-	local btools = player.Backpack:FindFirstChild("Building Tools") or player.Character:FindFirstChild("Building Tools")
+game.StarterGui:SetCore("SendNotification", {
+    Title = "Hello, "..player.Name,
+    Text = "Welcome to Xtreme Admin",
+    Button1 = "View Commands";
+})
 
-	if btools then
+player.Chatted:Connect(function(message)
+    if message:sub(1, 1) == prefix then
+        message = message:sub(2, #message)
+        message = message:lower()
 
-		local args = {
-			[1] = "Remove",
-			[2] = {
-				[1] = target.Character
-			}
-		}
+        local players =  game.Players:GetPlayers()
+        local words = message:split(" ")
+        local command_string = words[1]
+        local target_string = words[2]
+        local targets = {}
 
-		btools.SyncAPI.ServerEndpoint:InvokeServer(unpack(args))
-	end
-end
+        if target_string == "me" or target_string == nil then
+            table.insert(targets, player)
 
-local function invisible(target)
-	local btools = player.Backpack:FindFirstChild("Building Tools") or player.Character:FindFirstChild("Building Tools")
+        elseif target_string == "all" then
+            for _, v in pairs(players) do
+                table.insert(targets, v)
+            end
 
-	for _, v in pairs(target.Character:GetDescendants()) do
+        elseif target_string == "others" then
+            for _, v in pairs(players) do
+                if v ~= player then
+                    table.insert(targets, v)
+                end
+            end
 
-		if v:IsA("BasePart") or v:IsA("Decal") then
+        elseif target_string == "random" then
+            table.insert(targets, players[math.random(1, #players)])
+        end
 
-			local args = {
-				[1] = "SyncMaterial",
-				[2] = {
-					[1] = {
-						["Part"] = v,
-						["Transparency"] = 1
-					}
-				}
-			}
+        if target_string then
+            for _, v in pairs(players) do
+                if v.Name:lower():find(target_string) then
+                    table.insert(targets, v)
+                end
+            end
+        end
 
-			btools.SyncAPI.ServerEndpoint:InvokeServer(unpack(args))
-
-		end
-
-	end
-end
-
-local function visible(target)
-	local btools = player.Backpack:FindFirstChild("Building Tools") or player.Character:FindFirstChild("Building Tools")
-
-	for _, v in pairs(target.Character:GetDescendants()) do
-
-		if (v:IsA("BasePart") or v:IsA("Decal")) and v.Name ~= "HumanoidRootPart" then
-
-			local args = {
-				[1] = "SyncMaterial",
-				[2] = {
-					[1] = {
-						["Part"] = v,
-						["Transparency"] = 0
-					}
-				}
-			}
-
-			btools.SyncAPI.ServerEndpoint:InvokeServer(unpack(args))
-
-		end
-	end
-end
-
-player.Chatted:Connect(function(msg)
-
-	msg = msg:lower()
-
-	if msg:sub(1, 1) == prefix then
-		msg = msg:sub(1 + 1, #msg)
-		print("command possible")
-		local btools = player.Backpack:FindFirstChild("Building Tools") or player.Character:FindFirstChild("Building Tools")
-		if btools then
-			local players = game.Players:GetPlayers()
-			local words = msg:split(" ")
-			local commandString = words[1]
-			local targetGroup = words[2]
-			local targets = {}
-
-			if targetGroup == "me" then
-				table.insert(targets, player)
-
-			elseif targetGroup == "all" then
-				for _, Player in pairs(players) do
-					table.insert(targets, Player)
-				end
-
-			elseif targetGroup == "others" then
-				for _, otherPlayer in pairs(players) do
-					if otherPlayer ~= player then
-						table.insert(targets, otherPlayer)
-					end
-				end
-
-			elseif targetGroup == nil then
-				table.insert(targets, player)
-			end
-
-			if commandString == "kill" then
-				for _, target in pairs(targets) do
-					kill(target)
-				end
-
-			elseif commandString == "punish" then
-				for _, target in pairs(targets) do
-					punish(target)
-				end
-
-			elseif commandString == "invisible" or commandString == "invis" then
-				for _, target in pairs(targets) do
-					invisible(target)
-				end
-
-			elseif commandString == "visible" or commandString == "vis" then
-				for _, target in pairs(targets) do
-					visible(target)
-				end
-			end
-
-		else
-			print("no btools found!")
-		end
-
-	end
-
+        if commands[command_string] then
+            for _, target in pairs(targets) do
+                if target ~= player then
+                    commands[command_string](target)
+                end
+                if table.find(targets, player) then
+                    commands[command_string](player)
+                end
+            end
+        end
+    end
 end)
